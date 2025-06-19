@@ -259,12 +259,15 @@ open class OpenAIProxiedService: OpenAIService, ProxiedService {
     ///                    https://platform.openai.com/docs/api-reference/realtime-client-events/session/update#realtime-client-events/session/update-session
     ///   - logLevel: The threshold level that this library begins emitting log messages.
     ///               For example, if you set this to `info`, then you'll see all `info`, `warning`, `error`, and `critical` logs.
+    ///   - unknownMessageHandler: Optional handler for processing unknown/unhandled websocket messages.
+    ///                           Called with the raw JSON dictionary when an unknown message type is received.
     ///
     /// - Returns: A realtime session manager that the caller can send and receive messages with.
     public func realtimeSession(
         model: String,
         configuration: OpenAIRealtimeSessionConfiguration,
-        logLevel: AIProxyLogLevel
+        logLevel: AIProxyLogLevel,
+        unknownMessageHandler: (([String: Any]) -> Void)? = nil
     ) async throws -> OpenAIRealtimeSession {
         aiproxyCallerDesiredLogLevel = logLevel
         let request = try await AIProxyURLRequest.create(
@@ -281,7 +284,8 @@ open class OpenAIProxiedService: OpenAIService, ProxiedService {
         )
         return await OpenAIRealtimeSession(
             webSocketTask: self.urlSession.webSocketTask(with: request),
-            sessionConfiguration: configuration
+            sessionConfiguration: configuration,
+            unknownMessageHandler: unknownMessageHandler
         )
     }
 
