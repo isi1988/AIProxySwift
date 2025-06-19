@@ -1,6 +1,6 @@
 //
 //  OpenAIService.swift
-//  
+//
 //
 //  Created by Lou Zell on 12/14/24.
 //
@@ -110,10 +110,10 @@ public protocol OpenAIService {
     ) async throws -> OpenAIEmbeddingResponseBody
 
     /// Starts a realtime session.
-    /// 
+    ///
     /// To protect this connection through AIProxy's backend, your project must have websocket support enabled.
     /// If you would like to be added to the private beta for websocket support, please reach out.
-    /// 
+    ///
     /// - Parameters:
     ///   - model: The model to use. See the available model names here:
     ///            https://platform.openai.com/docs/models#gpt-4o-realtime
@@ -121,12 +121,15 @@ public protocol OpenAIService {
     ///                    https://platform.openai.com/docs/api-reference/realtime-client-events/session/update#realtime-client-events/session/update-session
     ///   - logLevel: The threshold level that this library begins emitting log messages.
     ///               For example, if you set this to `info`, then you'll see all `info`, `warning`, `error`, and `critical` logs.
+    ///   - unknownMessageHandler: Optional handler for processing unknown/unhandled websocket messages.
+    ///                           Called with the raw JSON dictionary when an unknown message type is received.
     ///
     /// - Returns: A realtime session manager that the caller can send and receive messages with.
     func realtimeSession(
         model: String,
         configuration: OpenAIRealtimeSessionConfiguration,
-        logLevel: AIProxyLogLevel
+        logLevel: AIProxyLogLevel,
+        unknownMessageHandler: (([String: Any]) -> Void)?
     ) async throws -> OpenAIRealtimeSession
 
 
@@ -173,5 +176,19 @@ extension OpenAIService {
         body: OpenAICreateTranscriptionRequestBody
     ) async throws -> OpenAICreateTranscriptionResponseBody {
         return try await self.createTranscriptionRequest(body: body, progressCallback: nil)
+    }
+    
+    // Extension with default unknownMessageHandler parameter
+    public func realtimeSession(
+        model: String,
+        configuration: OpenAIRealtimeSessionConfiguration,
+        logLevel: AIProxyLogLevel
+    ) async throws -> OpenAIRealtimeSession {
+        return try await self.realtimeSession(
+            model: model,
+            configuration: configuration,
+            logLevel: logLevel,
+            unknownMessageHandler: nil
+        )
     }
 }
