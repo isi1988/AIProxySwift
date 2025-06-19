@@ -18,13 +18,16 @@ open class OpenAIRealtimeSession {
     private var continuation: AsyncStream<OpenAIRealtimeMessage>.Continuation?
     private let setupTime = Date()
     let sessionConfiguration: OpenAIRealtimeSessionConfiguration
+    private let unknownMessageHandler: (([String: Any]) -> Void)?
 
     init(
         webSocketTask: URLSessionWebSocketTask,
-        sessionConfiguration: OpenAIRealtimeSessionConfiguration
+        sessionConfiguration: OpenAIRealtimeSessionConfiguration,
+        unknownMessageHandler: (([String: Any]) -> Void)? = nil
     ) {
         self.webSocketTask = webSocketTask
         self.sessionConfiguration = sessionConfiguration
+        self.unknownMessageHandler = unknownMessageHandler
 
         Task {
             await self.sendMessage(OpenAIRealtimeSessionUpdate(session: self.sessionConfiguration))
@@ -118,6 +121,8 @@ open class OpenAIRealtimeSession {
         }
     }
 
+    
+    
     // TODO: Add the remaining events from this list to the switch statement below:
     //       https://platform.openai.com/docs/api-reference/realtime-server-events
     private func didReceiveWebSocketData(_ data: Data) {
@@ -187,6 +192,11 @@ open class OpenAIRealtimeSession {
         default:
             // Log unhandled message types for debugging
             logIf(.debug)?.debug("Unhandled message type: \(messageType) - \(json)")
+            
+            // Call the unknown message handler if provided
+            if let handler = self.unknownMessageHandler {
+                handler(json)
+            }
             break
         }
 
